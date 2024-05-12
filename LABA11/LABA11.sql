@@ -1,0 +1,18 @@
+ALTER SESSION set "_ORACLE_SCRIPT"=TRUE;
+
+create USER MIGAUSER IDENTIFIED BY 1122
+    DEFAULT TABLESPACE TS_MIG
+    TEMPORARY TABLESPACE TEMP;
+
+CREATE TABLESPACE TS_MIG
+    DATAFILE 'C:\oracle\tablespaces\MIG.dbf'
+    SIZE 10m
+    AUTOEXTEND ON NEXT 10m MAXSIZE 300m
+    ONLINE;
+
+
+Grant resource, connect, create session, create view, create any trigger, create any procedure, create any table to MIGAUSER;
+GRANT ALL PRIVILEGES TO MIGAUSER;
+GRANT UNLIMITED TABLESPACE TO MIGAUSER;
+
+SELECT * FROM  ADMINCINEMA;

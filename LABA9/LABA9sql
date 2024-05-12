@@ -1,0 +1,109 @@
+--Обработка данных из объектных таблиц при помощи коллекций:
+--a. Создать коллекцию на основе t1, далее K1, для нее как атрибут – вложенную коллекцию на основе t2, далее К2:
+
+DECLARE
+    TYPE t1_type IS TABLE OF ORDER_OBJ_TABLE%ROWTYPE;
+    TYPE t2_type IS TABLE OF DRIVER_OBJ_TABLE%ROWTYPE;
+
+    K1 t1_type;
+    K2 t2_type;
+BEGIN
+    -- Заполнение коллекции K1 данными из таблицы ORDER_OBJ_TABLE
+    SELECT * BULK COLLECT INTO K1 FROM ORDER_OBJ_TABLE;
+
+    -- Заполнение вложенной коллекции K2 данными из таблицы DRIVER_OBJ_TABLE
+    SELECT * BULK COLLECT INTO K2 FROM DRIVER_OBJ_TABLE;
+
+    -- Пример обращения к элементам коллекции K1 и K2
+    IF K1.EXISTS(1) THEN
+        DBMS_OUTPUT.PUT_LINE('Element exists in K1');
+    END IF;
+
+    IF K2.EXISTS(1) THEN
+        DBMS_OUTPUT.PUT_LINE('Element exists in K2');
+    END IF;
+END;
+--b. Выяснить, является ли членом коллекции К1 какой-то произвольный элемент:
+DECLARE
+    TYPE t1_type IS TABLE OF ORDER_OBJ_TABLE%ROWTYPE;
+    K1 t1_type;
+    element_exists BOOLEAN;
+BEGIN
+    -- Заполнение коллекции K1 данными из таблицы ORDER_OBJ_TABLE
+    SELECT * BULK COLLECT INTO K1 FROM ORDER_OBJ_TABLE;
+
+    -- Проверка, является ли элемент с индексом 2 членом коллекции K1
+    element_exists := K1.EXISTS(2);
+
+    IF element_exists THEN
+        DBMS_OUTPUT.PUT_LINE('Element exists in K1');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Element does not exist in K1');
+    END IF;
+END;
+--c. Найти пустые коллекции К1:
+DECLARE
+    TYPE t1_type IS TABLE OF ORDER_OBJ_TABLE%ROWTYPE;
+    K1 t1_type;
+BEGIN
+    SELECT * BULK COLLECT INTO K1 FROM ORDER_OBJ_TABLE;
+    IF K1.COUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('K1 collection is empty');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('K1 collection is not empty');
+    END IF;
+END;
+--3.	Преобразовать коллекцию к другому виду (к коллекции другого типа, к реляционным данным).
+
+DECLARE
+    TYPE t1_type IS TABLE OF ORDER_OBJ_TABLE%ROWTYPE;
+    TYPE t2_type IS TABLE OF DRIVER_OBJ_TABLE%ROWTYPE;
+    K1 t1_type;
+    K2 t2_type := t2_type();
+BEGIN
+    SELECT * BULK COLLECT INTO K1 FROM ORDER_OBJ_TABLE;
+    SELECT * BULK COLLECT INTO K2 FROM DRIVER_OBJ_TABLE;
+    IF K2.EXISTS(1) THEN
+        DBMS_OUTPUT.PUT_LINE('Преобразовать получилось');
+    END IF;
+
+END;
+/
+
+CREATE TABLE TRANSFORMED_DRIVER_TABLE (
+    id NUMBER,
+    name NVARCHAR2(40),
+    surname NVARCHAR2(40),
+    license INT,
+    phone_number VARCHAR2(20),
+    email NVARCHAR2(50)
+);
+
+DECLARE
+    TYPE t1_type IS TABLE OF DRIVER_OBJ_TABLE%ROWTYPE; -- Тип записи для таблицы DRIVER_OBJ_TABLE
+    K1 t1_type;
+BEGIN
+    -- Заполнение коллекции K1 данными из таблицы DRIVER_OBJ_TABLE
+    SELECT * BULK COLLECT INTO K1 FROM DRIVER_OBJ_TABLE;
+
+    -- Проход по коллекции K1 и вставка данных в TRANSFORMED_DRIVER_TABLE
+    FOR i IN 1 .. K1.COUNT LOOP
+        INSERT INTO TRANSFORMED_DRIVER_TABLE (id, name, surname, license, phone_number, email)
+        VALUES (
+            K1(i).id,
+            K1(i).name,
+            K1(i).surname,
+            K1(i).license,
+            K1(i).phone_number,
+            K1(i).email
+        );
+    END LOOP;
+
+    -- Теперь данные из коллекции K1 вставлены в таблицу TRANSFORMED_DRIVER_TABLE
+    -- Вы можете использовать их по мере необходимости
+END;
+
+
+
+/
+
